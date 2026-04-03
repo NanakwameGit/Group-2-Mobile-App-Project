@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker – Presentation</title>
+  <style>
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Slide container ────────────────────────────────────── */
+    .slideshow {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 80px;
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .slide.exit {
+      display: flex;
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+
+    /* ── Slide backgrounds ──────────────────────────────────── */
+    .bg-purple  { background: linear-gradient(135deg, #1a0533 0%, #3b1d8a 100%); }
+    .bg-dark    { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a3e 100%); }
+    .bg-teal    { background: linear-gradient(135deg, #0a2a2a 0%, #0d4a42 100%); }
+    .bg-blue    { background: linear-gradient(135deg, #0a1a3a 0%, #0d3a6a 100%); }
+    .bg-orange  { background: linear-gradient(135deg, #2a1200 0%, #5c2800 100%); }
+
+    /* ── Slide number ───────────────────────────────────────── */
+    .slide-num {
+      position: fixed;
+      bottom: 20px;
+      right: 28px;
+      font-size: 10pt;
+      color: rgba(255,255,255,.35);
+      z-index: 100;
+    }
+
+    /* ── Navigation ─────────────────────────────────────────── */
+    .nav-btn {
+      position: fixed;
+      bottom: 20px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 11pt;
+      transition: background .2s;
+      z-index: 100;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,.2); }
+    #prevBtn { left: 28px; }
+    #nextBtn { left: 110px; }
+
+    /* ── Progress bar ───────────────────────────────────────── */
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: #a78bfa;
+      transition: width .35s ease;
+      z-index: 200;
+    }
+
+    /* ── Dot nav ─────────────────────────────────────────────── */
+    .dots {
+      position: fixed;
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 100;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.3);
+      cursor: pointer;
+      transition: background .2s, transform .2s;
+    }
+    .dot.active {
+      background: #a78bfa;
+      transform: scale(1.3);
+    }
+
+    /* ── Typography ─────────────────────────────────────────── */
+    .label {
+      font-size: 9pt;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.5);
+      margin-bottom: 14px;
+      font-weight: 600;
+    }
+    h1 {
+      font-size: 42pt;
+      font-weight: 900;
+      line-height: 1.1;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    h2 {
+      font-size: 26pt;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .accent { color: #a78bfa; }
+    .accent-teal { color: #5eead4; }
+    .accent-orange { color: #fb923c; }
+    .accent-green { color: #4ade80; }
+    .accent-red { color: #f87171; }
+
+    .subtitle {
+      font-size: 14pt;
+      color: rgba(255,255,255,.65);
+      text-align: center;
+      max-width: 620px;
+      line-height: 1.6;
+    }
+
+    /* ── Pill tag ─────────────────────────────────────────────── */
+    .tag {
+      display: inline-block;
+      background: rgba(167,139,250,.2);
+      border: 1px solid rgba(167,139,250,.4);
+      color: #a78bfa;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 9.5pt;
+      font-weight: 600;
+      margin: 4px;
+    }
+    .tag.teal  { background: rgba(94,234,212,.15); border-color: rgba(94,234,212,.3); color: #5eead4; }
+    .tag.green { background: rgba(74,222,128,.15); border-color: rgba(74,222,128,.3); color: #4ade80; }
+    .tag.orange{ background: rgba(251,146,60,.15);  border-color: rgba(251,146,60,.3);  color: #fb923c; }
+
+    /* ── Two-column layout ──────────────────────────────────── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    /* ── Feature cards ───────────────────────────────────────── */
+    .card {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 22px 24px;
+    }
+    .card .icon { font-size: 26px; margin-bottom: 10px; }
+    .card h4 { font-size: 12pt; font-weight: 700; margin-bottom: 6px; }
+    .card p  { font-size: 10pt; color: rgba(255,255,255,.6); line-height: 1.5; }
+
+    /* ── List items ──────────────────────────────────────────── */
+    .check-list {
+      list-style: none;
+      max-width: 640px;
+      width: 100%;
+    }
+    .check-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      font-size: 13pt;
+      line-height: 1.5;
+    }
+    .check-list li:last-child { border-bottom: none; }
+    .check-list .bullet {
+      width: 22px; height: 22px; min-width: 22px;
+      background: rgba(167,139,250,.25);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    /* ── File tree ──────────────────────────────────────────── */
+    .tree {
+      background: rgba(0,0,0,.4);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 20px 28px;
+      font-family: "Consolas", monospace;
+      font-size: 11pt;
+      line-height: 2;
+      min-width: 340px;
+    }
+    .tree .f  { color: #79c0ff; }
+    .tree .d  { color: #c9d1d9; }
+    .tree .c  { color: #6e7681; font-size: 9.5pt; }
+
+    /* ── Flow ────────────────────────────────────────────────── */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .fstep {
+      background: rgba(167,139,250,.2);
+      border: 1px solid rgba(167,139,250,.4);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 10pt;
+      font-weight: 600;
+      text-align: center;
+      min-width: 130px;
+      color: #e0d7ff;
+    }
+    .fstep.g { background: rgba(74,222,128,.15); border-color: rgba(74,222,128,.3); color: #4ade80; }
+    .fstep.b { background: rgba(96,165,250,.15); border-color: rgba(96,165,250,.3); color: #93c5fd; }
+    .farrow { padding: 0 8px; color: rgba(255,255,255,.4); font-size: 18px; }
+
+    /* ── Table ───────────────────────────────────────────────── */
+    .styled-table {
+      width: 100%;
+      max-width: 820px;
+      border-collapse: collapse;
+      font-size: 10.5pt;
+    }
+    .styled-table th {
+      background: rgba(167,139,250,.25);
+      color: #e0d7ff;
+      padding: 10px 16px;
+      text-align: left;
+      font-weight: 700;
+    }
+    .styled-table td {
+      padding: 9px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      color: rgba(255,255,255,.85);
+    }
+    .styled-table tr:hover td { background: rgba(255,255,255,.04); }
+
+    /* ── Big stat ─────────────────────────────────────────────── */
+    .stat-row {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat .num {
+      font-size: 40pt;
+      font-weight: 900;
+      color: #a78bfa;
+      line-height: 1;
+    }
+    .stat .lbl {
+      font-size: 10pt;
+      color: rgba(255,255,255,.5);
+      margin-top: 4px;
+    }
+
+    /* ── Print ───────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; color: #000; overflow: visible; height: auto; }
+      .slide { position: relative; display: flex !important; opacity: 1 !important;
+               transform: none !important; page-break-after: always;
+               height: 100vh; min-height: 540px; }
+      .nav-btn, .dots, .slide-num, .progress-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+
+<div class="slideshow" id="slideshow">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 1 — TITLE
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-purple active" data-index="0">
+    <div class="label">Group 2 · Mobile App Development</div>
+    <h1>Personal<br><span class="accent">Expense</span><br>Tracker</h1>
+    <p class="subtitle" style="margin-top:20px;">
+      A Flutter mobile app for logging, categorizing, and reviewing
+      personal finances — with local storage and first-launch onboarding.
+    </p>
+    <div style="margin-top:32px;">
+      <span class="tag">Flutter 3.38</span>
+      <span class="tag">Dart 3.10</span>
+      <span class="tag">Material 3</span>
+      <span class="tag teal">shared_preferences</span>
+    </div>
+    <div style="margin-top:18px; font-size:9.5pt; color:rgba(255,255,255,.3);">
+      April 2026
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 2 — PROBLEM STATEMENT
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-dark" data-index="1">
+    <div class="label">The Problem</div>
+    <h2>Why do we need this app?</h2>
+    <ul class="check-list">
+      <li>
+        <div class="bullet">💸</div>
+        Most people have <strong>no clear picture</strong> of where their money goes each month
+      </li>
+      <li>
+        <div class="bullet">📱</div>
+        Existing finance apps are <strong>overcomplicated</strong> — accounts, budgets, charts, subscriptions
+      </li>
+      <li>
+        <div class="bullet">🔒</div>
+        Many require <strong>cloud accounts</strong> and share your financial data with third parties
+      </li>
+      <li>
+        <div class="bullet">✅</div>
+        We built something <strong>simple, private, and offline</strong> — all data stays on your phone
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 3 — FEATURES
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-blue" data-index="2">
+    <div class="label">What It Does</div>
+    <h2>Core <span class="accent">Features</span></h2>
+    <div class="two-col">
+      <div class="card">
+        <div class="icon">💳</div>
+        <h4>Balance Dashboard</h4>
+        <p>Gradient card showing current balance, total income, and total expenses — live updates.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📋</div>
+        <h4>Transaction List</h4>
+        <p>Scrollable list with category icons, dates, and colour-coded amounts (red/green).</p>
+      </div>
+      <div class="card">
+        <div class="icon">➕</div>
+        <h4>Add Transaction</h4>
+        <p>Bottom sheet form — title, amount, category, date picker, income/expense toggle.</p>
+      </div>
+      <div class="card">
+        <div class="icon">💾</div>
+        <h4>Local Storage</h4>
+        <p>Transactions survive restarts. JSON-encoded in SharedPreferences — no server needed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 4 — ONBOARDING
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-teal" data-index="3">
+    <div class="label">First Launch</div>
+    <h2><span class="accent-teal">Onboarding</span> Flow</h2>
+    <div class="flow" style="margin-bottom:32px;">
+      <div class="fstep b">Page 1<br><small style="font-weight:400;opacity:.7;">Track Spending</small></div>
+      <div class="farrow">→</div>
+      <div class="fstep b">Page 2<br><small style="font-weight:400;opacity:.7;">Categorize</small></div>
+      <div class="farrow">→</div>
+      <div class="fstep b">Page 3<br><small style="font-weight:400;opacity:.7;">Big Picture</small></div>
+      <div class="farrow">→</div>
+      <div class="fstep g">Get Started<br><small style="font-weight:400;opacity:.7;">Save flag</small></div>
+      <div class="farrow">→</div>
+      <div class="fstep g">Home Screen</div>
+    </div>
+    <ul class="check-list" style="max-width:520px;">
+      <li><div class="bullet">🎨</div> Each page has a unique colour theme and a large icon</li>
+      <li><div class="bullet">●</div> Animated dot indicators — active dot stretches to a pill</li>
+      <li><div class="bullet">⏭️</div> Skip link on pages 1 and 2 for returning users</li>
+      <li><div class="bullet">🔑</div> <code style="background:rgba(255,255,255,.1);padding:2px 8px;border-radius:4px;">onboarding_done = true</code> written to SharedPreferences on completion</li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 5 — TECH STACK
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-dark" data-index="4">
+    <div class="label">Under the Hood</div>
+    <h2>Technical <span class="accent">Stack</span></h2>
+    <table class="styled-table">
+      <tr><th>Layer</th><th>Technology</th><th>Why?</th></tr>
+      <tr><td>UI Framework</td><td>Flutter 3.38 · Material 3</td><td>Cross-platform; Android, iOS, Web</td></tr>
+      <tr><td>Language</td><td>Dart 3.10</td><td>Null-safe, strongly typed</td></tr>
+      <tr><td>State</td><td>StatefulWidget + setState</td><td>Simple; no extra package needed</td></tr>
+      <tr><td>Storage</td><td>shared_preferences</td><td>Key-value; stores JSON array</td></tr>
+      <tr><td>Navigation</td><td>Flutter Navigator</td><td>Push / pushReplacement</td></tr>
+    </table>
+    <div style="margin-top:22px;">
+      <span class="tag">0 architecture packages</span>
+      <span class="tag teal">1 storage package</span>
+      <span class="tag orange">4 Dart files total</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 6 — PROJECT STRUCTURE
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-dark" data-index="5">
+    <div class="label">Code Organization</div>
+    <h2>Project <span class="accent">Structure</span></h2>
+    <div style="display:flex; gap:48px; align-items:center;">
+      <div class="tree">
+        <span class="f">lib/</span><br>
+        &nbsp;&nbsp;<span class="d">main.dart</span>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c">← entry + AppRouter</span><br>
+        &nbsp;&nbsp;<span class="f">models/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="d">transaction.dart</span>&nbsp;<span class="c">← model + JSON</span><br>
+        &nbsp;&nbsp;<span class="f">screens/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="d">onboarding_screen.dart</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="d">home_screen.dart</span>&nbsp;&nbsp;<span class="c">← all UI</span>
+      </div>
+      <ul class="check-list" style="max-width:340px;">
+        <li><div class="bullet">📄</div><strong>main.dart</strong> — theme + routing logic</li>
+        <li><div class="bullet">🗂️</div><strong>transaction.dart</strong> — data model with toJson / fromJson</li>
+        <li><div class="bullet">🎉</div><strong>onboarding_screen.dart</strong> — first-launch flow</li>
+        <li><div class="bullet">🏠</div><strong>home_screen.dart</strong> — everything else</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 7 — DATA FLOW
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-blue" data-index="6">
+    <div class="label">How It Works</div>
+    <h2>Data <span class="accent">Flow</span></h2>
+    <div style="display:flex; flex-direction:column; gap:16px; align-items:center; width:100%;">
+      <div class="flow" style="width:100%;">
+        <div class="fstep b">App opens</div>
+        <div class="farrow">→</div>
+        <div class="fstep b">AppRouter</div>
+        <div class="farrow">→</div>
+        <div class="fstep b">Read SharedPreferences</div>
+      </div>
+      <div style="display:flex; gap:60px; margin-top:4px;">
+        <div style="text-align:center;">
+          <div style="color:rgba(255,255,255,.4);font-size:9pt;margin-bottom:8px;">First launch</div>
+          <div class="fstep" style="min-width:160px;">OnboardingScreen</div>
+          <div class="farrow" style="display:block;text-align:center;padding:8px 0;">↓</div>
+          <div class="fstep g">HomeScreen + seed data</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="color:rgba(255,255,255,.4);font-size:9pt;margin-bottom:8px;">Returning user</div>
+          <div class="fstep g" style="min-width:160px;">HomeScreen directly</div>
+          <div class="farrow" style="display:block;text-align:center;padding:8px 0;">↓</div>
+          <div class="fstep g">Load JSON from storage</div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:10pt; color:rgba(255,255,255,.5); text-align:center;">
+      Every add or delete → <code style="background:rgba(255,255,255,.1);padding:2px 8px;border-radius:4px;">json.encode(list)</code>
+      → <code style="background:rgba(255,255,255,.1);padding:2px 8px;border-radius:4px;">prefs.setString('transactions', ...)</code>
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 8 — CHALLENGES
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-orange" data-index="7">
+    <div class="label">What We Learned</div>
+    <h2>Challenges &amp; <span class="accent-orange">Solutions</span></h2>
+    <ul class="check-list" style="max-width:720px;">
+      <li>
+        <div class="bullet">⏳</div>
+        <div>
+          <strong>App stuck on loading</strong><br>
+          <span style="color:rgba(255,255,255,.6); font-size:11pt;">Missing <code style="background:rgba(255,255,255,.1);padding:1px 6px;border-radius:3px;">WidgetsFlutterBinding.ensureInitialized()</code> — platform channel not ready before SharedPreferences was called</span>
+        </div>
+      </li>
+      <li>
+        <div class="bullet">🎨</div>
+        <div>
+          <strong>Color type removed from Flutter 3.38 public API</strong><br>
+          <span style="color:rgba(255,255,255,.6); font-size:11pt;">Replaced explicit <code style="background:rgba(255,255,255,.1);padding:1px 6px;border-radius:3px;">Color</code> annotations with inferred variables; pass <code style="background:rgba(255,255,255,.1);padding:1px 6px;border-radius:3px;">isIncome: bool</code> instead</span>
+        </div>
+      </li>
+      <li>
+        <div class="bullet">🔐</div>
+        <div>
+          <strong>GitHub push 403 — even after being added as collaborator</strong><br>
+          <span style="color:rgba(255,255,255,.6); font-size:11pt;">Invitation was pending. Accepted via GitHub API: <code style="background:rgba(255,255,255,.1);padding:1px 6px;border-radius:3px;">gh api --method PATCH user/repository_invitations/{id}</code></span>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 9 — STATS
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-purple" data-index="8">
+    <div class="label">By the Numbers</div>
+    <h2>App <span class="accent">Stats</span></h2>
+    <div class="stat-row">
+      <div class="stat"><div class="num">4</div><div class="lbl">Dart Files</div></div>
+      <div class="stat"><div class="num">1</div><div class="lbl">Package Used</div></div>
+      <div class="stat"><div class="num">7</div><div class="lbl">Categories</div></div>
+      <div class="stat"><div class="num">3</div><div class="lbl">Onboarding Pages</div></div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+      <span class="tag">No backend</span>
+      <span class="tag">No authentication</span>
+      <span class="tag teal">No BLoC / Riverpod</span>
+      <span class="tag green">Runs on Android · iOS · Web</span>
+      <span class="tag orange">~600 lines of Dart</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 10 — DEMO
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-dark" data-index="9">
+    <div class="label">Live Walkthrough</div>
+    <h2>Demo <span class="accent">Flow</span></h2>
+    <ul class="check-list" style="max-width:580px;">
+      <li><div class="bullet" style="background:rgba(167,139,250,.3); color:#a78bfa; font-weight:700;">1</div>Open app → <strong>onboarding</strong> (3 pages, tap Next)</li>
+      <li><div class="bullet" style="background:rgba(167,139,250,.3); color:#a78bfa; font-weight:700;">2</div>Arrive at <strong>home screen</strong> — point out balance card with sample data</li>
+      <li><div class="bullet" style="background:rgba(167,139,250,.3); color:#a78bfa; font-weight:700;">3</div>Tap <strong>Add</strong> → fill form → submit → balance updates live</li>
+      <li><div class="bullet" style="background:rgba(167,139,250,.3); color:#a78bfa; font-weight:700;">4</div>Tap <strong>delete</strong> on a transaction → list updates, balance recalculates</li>
+      <li><div class="bullet" style="background:rgba(167,139,250,.3); color:#a78bfa; font-weight:700;">5</div><strong>Restart</strong> the app → all transactions are still there (local storage)</li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 11 — CONCLUSION
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="slide bg-purple" data-index="10">
+    <div class="label">Wrap Up</div>
+    <h2>Conclusion</h2>
+    <p class="subtitle" style="margin-bottom:28px;">
+      A fully working, polished Flutter app — built with <strong>minimal complexity</strong>
+      to demonstrate real mobile development concepts in clean, readable code.
+    </p>
+    <div class="two-col" style="max-width:680px;">
+      <div class="card">
+        <div class="icon">✅</div>
+        <h4>What We Covered</h4>
+        <p>State management, local persistence, navigation, form validation, serialization, onboarding UX</p>
+      </div>
+      <div class="card">
+        <div class="icon">🚀</div>
+        <h4>Possible Extensions</h4>
+        <p>Monthly budgets, spending charts, currency selection, dark mode, cloud sync</p>
+      </div>
+    </div>
+    <div style="margin-top:32px; font-size:10pt; color:rgba(255,255,255,.4);">
+      github.com/NanakwameGit/Group-2-Mobile-App-Project
+    </div>
+  </div>
+
+</div><!-- /slideshow -->
+
+<!-- Controls -->
+<button class="nav-btn" id="prevBtn">← Prev</button>
+<button class="nav-btn" id="nextBtn">Next →</button>
+<div class="dots" id="dots"></div>
+<div class="slide-num" id="slideNum"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let current  = 0;
+
+  // Build dot nav
+  const dotsEl = document.getElementById('dots');
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(d);
+  });
+
+  function goTo(n) {
+    if (n < 0 || n >= total) return;
+
+    // Exit current
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current].classList.remove('active', 'exit'), 350);
+
+    current = n;
+
+    // Activate new
+    slides[current].classList.add('active');
+
+    // Update dots
+    document.querySelectorAll('.dot').forEach((d, i) =>
+      d.classList.toggle('active', i === current));
+
+    // Update progress bar
+    document.getElementById('progress').style.width =
+      ((current + 1) / total * 100) + '%';
+
+    // Update counter
+    document.getElementById('slideNum').textContent =
+      (current + 1) + ' / ' + total;
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1));
+  document.getElementById('nextBtn').addEventListener('click', () => goTo(current + 1));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') goTo(current + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     goTo(current - 1);
+  });
+
+  // Touch / swipe
+  let touchX = 0;
+  document.addEventListener('touchstart', e => touchX = e.touches[0].clientX);
+  document.addEventListener('touchend',   e => {
+    const diff = touchX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) goTo(diff > 0 ? current + 1 : current - 1);
+  });
+
+  // Init
+  goTo(0);
+</script>
+
+</body>
+</html>
